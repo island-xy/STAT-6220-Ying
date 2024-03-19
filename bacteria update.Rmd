@@ -1,0 +1,224 @@
+
+```{r, echo = FALSE,warning= FALSE}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+bacteria_a <- read_excel("UofI Stats Data.xlsx", sheet = 1)
+bacteria_b <- read_excel("UofI Stats Data.xlsx", sheet = 2)
+bacteria_c <- read_excel("UofI Stats Data.xlsx", sheet = 3)
+bacteria_x <- read_excel("UofI Stats Data.xlsx", sheet = 4)
+
+```
+```{r}
+bacteria_a <- bacteria_a[,-c(1,3,7,8,13,16,22,25,27,29,30)]
+bacteria_b <- bacteria_b[,-c(1,3,7,12,20,23,25,27,28)]
+bacteria_c <- bacteria_c[,-c(1,3,5,8,13,16,18,23,26,28,30,31)]
+bacteria_x <- bacteria_x[,-c(1,3,5,6,13,16,22,25,27,29,30)]
+
+colnames(bacteria_a) <- gsub(" ", "_", colnames(bacteria_a))
+colnames(bacteria_a) <- gsub("\\(|\\)|<|>|\\+|\\-|/", "", colnames(bacteria_a))
+
+colnames(bacteria_b) <- colnames(bacteria_a)
+colnames(bacteria_c) <- colnames(bacteria_a)
+colnames(bacteria_x) <- colnames(bacteria_a)
+```
+
+```{r}
+bacteria_a$Age_at_Time <- ifelse(is.na(bacteria_a$Age_at_Time), NA, ifelse(bacteria_a$Age_at_Time >= 65, "Y", "N"))
+bacteria_a$Race <- ifelse(is.na(bacteria_a$Race), NA, ifelse(bacteria_a$Race == "White or Caucasian", "Y", "N"))
+bacteria_a$Temp <- ifelse(is.na(bacteria_a$Temp), NA, ifelse(bacteria_a$Temp >= 99.6, "Y", "N"))
+bacteria_a$WBC <- ifelse(is.na(bacteria_a$WBC), NA, ifelse(bacteria_a$WBC >= 11, "Y", "N"))
+bacteria_a$Procal <- ifelse(is.na(bacteria_a$Procal), NA, ifelse(bacteria_a$Procal >= 0.5, "Y", "N"))
+bacteria_a$CRP <- ifelse(is.na(bacteria_a$CRP), NA, ifelse(bacteria_a$CRP >= 3, "Y", "N"))
+
+bacteria_b$Age_at_Time <- ifelse(is.na(bacteria_b$Age_at_Time), NA, ifelse(bacteria_b$Age_at_Time >= 65, "Y", "N"))
+bacteria_b$Race <- ifelse(is.na(bacteria_b$Race), NA, ifelse(bacteria_b$Race == "White or Caucasian", "Y", "N"))
+bacteria_b$Temp <- ifelse(is.na(bacteria_b$Temp), NA, ifelse(bacteria_b$Temp >= 99.6, "Y", "N"))
+bacteria_b$WBC <- ifelse(is.na(bacteria_b$WBC), NA, ifelse(bacteria_b$WBC >= 11, "Y", "N"))
+bacteria_b$Procal <- ifelse(is.na(bacteria_b$Procal), NA, ifelse(bacteria_b$Procal >= 0.5, "Y", "N"))
+bacteria_b$CRP <- ifelse(is.na(bacteria_b$CRP), NA, ifelse(bacteria_b$CRP >= 3, "Y", "N"))
+
+bacteria_c$Age_at_Time <- ifelse(is.na(bacteria_c$Age_at_Time), NA, ifelse(bacteria_c$Age_at_Time >= 65, "Y", "N"))
+bacteria_c$Race <- ifelse(is.na(bacteria_c$Race), NA, ifelse(bacteria_c$Race == "White or Caucasian", "Y", "N"))
+bacteria_c$Temp <- ifelse(is.na(bacteria_c$Temp), NA, ifelse(bacteria_c$Temp >= 99.6, "Y", "N"))
+bacteria_c$WBC <- ifelse(is.na(bacteria_c$WBC), NA, ifelse(bacteria_c$WBC >= 11, "Y", "N"))
+bacteria_c$Procal <- ifelse(is.na(bacteria_c$Procal), NA, ifelse(bacteria_c$Procal >= 0.5, "Y", "N"))
+bacteria_c$CRP <- ifelse(is.na(bacteria_c$CRP), NA, ifelse(bacteria_c$CRP >= 3, "Y", "N"))
+
+bacteria_x$Age_at_Time <- ifelse(is.na(bacteria_x$Age_at_Time), NA, ifelse(bacteria_x$Age_at_Time >= 65, "Y", "N"))
+bacteria_x$Race <- ifelse(is.na(bacteria_x$Race), NA, ifelse(bacteria_x$Race == "White or Caucasian", "Y", "N"))
+bacteria_x$Temp <- ifelse(is.na(bacteria_x$Temp), NA, ifelse(bacteria_x$Temp >= 99.6, "Y", "N"))
+bacteria_x$WBC <- ifelse(is.na(bacteria_x$WBC), NA, ifelse(bacteria_x$WBC >= 11, "Y", "N"))
+bacteria_x$Procal <- ifelse(is.na(bacteria_x$Procal), NA, ifelse(bacteria_x$Procal >= 0.5, "Y", "N"))
+bacteria_x$CRP <- ifelse(is.na(bacteria_x$CRP), NA, ifelse(bacteria_x$CRP >= 3, "Y", "N"))
+```
+
+```{r}
+contingency <- function(variable_name){
+  eval(parse(text = paste0("tmp_a <- bacteria_a$",variable_name)))
+  eval(parse(text = paste0("tmp_b <- bacteria_b$",variable_name)))
+  eval(parse(text = paste0("tmp_c <- bacteria_c$",variable_name)))
+  eval(parse(text = paste0("tmp_x <- bacteria_x$",variable_name)))
+  
+  bacteria <- data.frame(
+  type = rep(c("Bacteria_a", "Bacteria_b", "Bacteria_c", "Bacteria_x"), 
+             times = c(nrow(bacteria_a), nrow(bacteria_b), nrow(bacteria_c), nrow(bacteria_x))),
+  result = c(tmp_a, tmp_b, tmp_c, tmp_x))
+  
+  stats <- bacteria %>%
+  group_by(type) %>%
+  summarise(
+    Y_count = sum(result == "Y"),
+    N_count = sum(result == "N"),
+    Total = n(),
+    Y_percentage = Y_count / Total * 100,
+    N_percentage = N_count / Total * 100
+  )
+  
+  kbl = knitr::kable(stats, format = "html")
+  kableExtra::kable_styling(kbl, full_width = FALSE)
+}
+
+contingency("Immnosuppression")
+```
+
+
+```{r, echo = FALSE}
+stacked_barplot <- function(variable_name){
+  eval(parse(text = paste0("tmp_a <- bacteria_a$",variable_name)))
+  eval(parse(text = paste0("tmp_b <- bacteria_b$",variable_name)))
+  eval(parse(text = paste0("tmp_c <- bacteria_c$",variable_name)))
+  eval(parse(text = paste0("tmp_x <- bacteria_x$",variable_name)))
+  bacteria <- data.frame(
+  type = rep(c("Bacteria_a", "Bacteria_b", "Bacteria_c", "Bacteria_x"), 
+             times = c(nrow(bacteria_a), nrow(bacteria_b), nrow(bacteria_c), nrow(bacteria_x))),
+  result = c(tmp_a, tmp_b, tmp_c, tmp_x))
+  variable_title <- variable_name
+  #remove NA value
+  if (any(is.na(bacteria$result))){
+    print("There is NA value")
+    bacteria <- bacteria[!is.na(bacteria$result),]
+    variable_title <- paste(variable_title,"(There is NA value)")
+  }
+  
+  p <- ggplot(bacteria, aes(fill = result, x = type)) +
+  geom_bar(position = "fill") +
+  ylab("Percentage") +
+  theme_minimal()+
+  ggtitle(variable_title)
+  print(p)
+}
+stacked_barplot("Immnosuppression")
+```
+
+Prop.test
+```{r}
+Prop <- function(variable_name){
+  eval(parse(text = paste0("tmp_a <- bacteria_a$",variable_name)))
+  eval(parse(text = paste0("tmp_b <- bacteria_b$",variable_name)))
+  eval(parse(text = paste0("tmp_c <- bacteria_c$",variable_name)))
+  eval(parse(text = paste0("tmp_x <- bacteria_x$",variable_name)))
+  bacteria <- data.frame(
+  type = rep(c("Bacteria_a", "Bacteria_b", "Bacteria_c", "Bacteria_x"), 
+             times = c(nrow(bacteria_a), nrow(bacteria_b), nrow(bacteria_c), nrow(bacteria_x))),
+  result = c(tmp_a, tmp_b, tmp_c, tmp_x))
+  variable_title <- variable_name
+  #remove NA value
+  if (any(is.na(bacteria$result))){
+    cat("\n",variable_name,"There is NA value","\n")
+    bacteria <- bacteria[!is.na(bacteria$result),]
+    variable_title <- paste(variable_title,"(There is NA value)")
+  }
+  stats <- bacteria %>%
+  group_by(type) %>%
+  summarise(
+    Y_count = sum(result == "Y"),
+    N_count = sum(result == "N"),
+    Total = n(),
+    Y_percentage = Y_count / Total * 100,
+    N_percentage = N_count / Total * 100
+  )
+  
+  tmp <- prop.test(c(stats$Y_count[1], stats$Y_count[4]), c(stats$Total[1], stats$Total[4]), correct = FALSE)
+  if(tmp$p.value <= 0.05){
+    cat(variable_name,": bacteria A vs bacteria X: significant with P-value = ",tmp$p.value, "\n")
+  }
+
+  tmp <- prop.test(c(stats$Y_count[2], stats$Y_count[4]), c(stats$Total[2], stats$Total[4]), correct = FALSE)
+  if(tmp$p.value <= 0.05){
+    cat(variable_name,": bacteria B vs bacteria X: significant with P-value = ",tmp$p.value, "\n")
+  }
+    
+  tmp <- prop.test(c(stats$Y_count[3], stats$Y_count[4]), c(stats$Total[3], stats$Total[4]), correct = FALSE)
+  if(tmp$p.value <= 0.05){
+    cat(variable_name,": bacteria C vs bacteria X: significant with P-value = ",tmp$p.value, "\n")
+  }    
+}
+Prop("Immnosuppression")
+
+```
+
+Fisher
+```{r}
+Fisher <- function(variable_name){
+  eval(parse(text = paste0("tmp_a <- bacteria_a$",variable_name)))
+  eval(parse(text = paste0("tmp_b <- bacteria_b$",variable_name)))
+  eval(parse(text = paste0("tmp_c <- bacteria_c$",variable_name)))
+  eval(parse(text = paste0("tmp_x <- bacteria_x$",variable_name)))
+  bacteria <- data.frame(
+  type = rep(c("Bacteria_a", "Bacteria_b", "Bacteria_c", "Bacteria_x"), 
+             times = c(nrow(bacteria_a), nrow(bacteria_b), nrow(bacteria_c), nrow(bacteria_x))),
+  result = c(tmp_a, tmp_b, tmp_c, tmp_x))
+  variable_title <- variable_name
+  #remove NA value
+  if (any(is.na(bacteria$result))){
+    cat("\n",variable_name,"There is NA value","\n")
+    bacteria <- bacteria[!is.na(bacteria$result),]
+    variable_title <- paste(variable_title,"(There is NA value)")
+  }
+  stats <- bacteria %>%
+  group_by(type) %>%
+  summarise(
+    Y_count = sum(result == "Y"),
+    N_count = sum(result == "N"),
+    Total = n(),
+    Y_percentage = Y_count / Total * 100,
+    N_percentage = N_count / Total * 100
+  )
+  tmp <- fisher.test(matrix(c(stats$Y_count[1], stats$N_count[1], stats$Y_count[4], stats$N_count[4]), nrow = 2))
+  if(tmp$p.value <= 0.05){
+    cat(variable_name,": bacteria A vs bacteria X: significant with P-value = ",tmp$p.value, "\n")
+  }
+
+  tmp <- fisher.test(matrix(c(stats$Y_count[2], stats$N_count[2], stats$Y_count[4], stats$N_count[4]), nrow = 2))
+  if(tmp$p.value <= 0.05){
+    cat(variable_name,": bacteria B vs bacteria X: significant with P-value = ",tmp$p.value, "\n")
+  }
+    
+  tmp <- fisher.test(matrix(c(stats$Y_count[3], stats$N_count[3], stats$Y_count[4], stats$N_count[4]), nrow = 2))
+  if(tmp$p.value <= 0.05){
+    cat(variable_name,": bacteria C vs bacteria X: significant with P-value = ",tmp$p.value, "\n")
+  }    
+}
+Fisher("Immnosuppression")
+```
+
+
+```{r, echo = FALSE,warning=FALSE}
+for (i in colnames(bacteria_a)[-3]){
+  stacked_barplot(i)
+}
+```
+
+```{r, echo = FALSE,warning=FALSE}
+for (i in colnames(bacteria_a)[-3]){
+  Prop(i)
+}
+```
+
+```{r, echo = FALSE,warning=FALSE}
+for (i in colnames(bacteria_a)[-3]){
+  Fisher(i)
+}
+```
+

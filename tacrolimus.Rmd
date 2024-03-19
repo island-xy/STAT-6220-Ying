@@ -1,0 +1,86 @@
+
+```{r, echo = FALSE,warning= FALSE}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(gt)
+library(knitr)
+tacrolimus <- read_excel("Research Project PGY2 unidentified.xlsx", sheet = 2)
+CYP3A5 <- read_excel("Research Project PGY2 unidentified.xlsx", sheet = 3)
+
+```
+
+
+```{r}
+tacrolimus <- tacrolimus[tacrolimus$Race != "Multiracial", ]
+
+colnames(tacrolimus)[11] <- "Envarsus"
+cross_tab <- table(tacrolimus$Race, tacrolimus$Envarsus)
+cross_tab
+white_African <- cross_tab[c(1,4),]
+white_African
+
+kable(cross_tab)
+kable(white_African)
+```
+
+#relationship between incident of Envarsus and race
+```{r}
+# 执行卡方检验
+chisq.test(cross_tab)
+chisq.test(white_African)
+```
+
+```{r}
+prop.test(cross_tab)
+prop.test(white_African)
+tmp <- white_African
+
+tmp1 <- tmp
+tmp1[1,] <- tmp[1,]*3
+kable(tmp1)
+prop.test(tmp1)
+
+tmp2 <- tmp
+tmp2[1,] <- tmp[1,]*10
+kable(tmp2)
+prop.test(tmp2)
+```
+
+```{r}
+fisher.test(cross_tab)
+fisher.test(white_African)
+```
+#relationship between time and race
+```{r}
+tacrolimus$time1 <- as.Date(tacrolimus$`Transplant Date`)
+tacrolimus$time2 <- as.Date(tacrolimus$`Date tacrolimus goal met (10-12)`)
+tacrolimus$time <- difftime(tacrolimus$time2, tacrolimus$time1, units = "days")
+
+# 执行方差分析
+anova_result <- aov(time ~ Race, data = tacrolimus)
+anova_result
+# 显示方差分析结果
+summary(anova_result)
+```
+
+```{r}
+# 选择两个种族进行比较，比如 "race1" 和 "race2"
+White <- as.numeric(na.omit(tacrolimus$time[tacrolimus$Race == "White"]))
+African_American <- as.numeric(tacrolimus$time[tacrolimus$Race == "African American"])
+Hispanic <- as.numeric(tacrolimus$time[tacrolimus$Race == "Hispanic"])
+Asian <- as.numeric(tacrolimus$time[tacrolimus$Race == "Asian"])
+
+wilcox.test(White, African_American)
+
+wilcox.test(White, Hispanic)
+
+wilcox.test(White, Asian)
+```
+
+```{r}
+kruskal.test(time ~ Race, data = tacrolimus)
+```
+
+#relationship between CYP3A5 and race
+samples are not enough!
